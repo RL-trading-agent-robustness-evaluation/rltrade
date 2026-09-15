@@ -1,9 +1,22 @@
+from datetime import timedelta, datetime, timezone
 import requests
+from pathlib import Path
+import time
+
+dir=Path(__file__).resolve().parent
+rl=dir.parent / "data"
+
 
 columns = ["date", "open", "high", "low", "close", "volume", "divCash", "splitFactor"]
 ticker="spy"
 
-url=f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?startDate=2019-01-02&endDate=2025-12-31&format=csv&resampleFreq=daily&columns={','.join(columns)}&token=bbd6787d039372ccb417d1de316de0d28fb586ef"
+#time
+offset=timedelta(hours=-4)
+timezone=timezone(offset)
+cur_time=datetime.now(timezone)
+formatted_time = cur_time.strftime("%Y-%m-%d")
+
+url=f"https://api.tiingo.com/tiingo/daily/{ticker}/prices?startDate=2019-01-02&endDate={formatted_time}&format=csv&resampleFreq=daily&columns={','.join(columns)}&token=bbd6787d039372ccb417d1de316de0d28fb586ef"
 headers = {
         'Content-Type': 'application/json'
         }
@@ -15,8 +28,8 @@ requestResponse = requests.get(url, headers=headers)
 
 if requestResponse.status_code == 200:
 
-        filename=f"C:/03_大學/大三專題/rltrade/data/{ticker}_price.csv"
-        with open(filename, "w") as f:
+        target=rl/(f"{ticker}_price.csv")
+        with open(target, "w") as f:
                 f.write(requestResponse.text)
 
 else:
