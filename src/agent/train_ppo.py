@@ -15,8 +15,8 @@ from src.env.trading_env import RLTradingEnv
 
 
 def train_ppo_agent(
-    train_csv: str = "data/processed/train.csv",
-    val_csv: str = "data/processed/val.csv",
+    train_csv: str = "data/processed/crsp_spy/train.csv",
+    val_csv: str = "data/processed/crsp_spy/val.csv",
     total_timesteps: int = 50_000,
     seed: int = 42,
     log_dir: str = "experiments/ppo_runs",
@@ -98,8 +98,15 @@ def train_ppo_agent(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train PPO Trading Victim V1")
+    parser.add_argument("--train-csv", type=str, default="data/processed/crsp_spy/train.csv", help="Path to train CSV")
+    parser.add_argument("--val-csv", type=str, default="data/processed/crsp_spy/val.csv", help="Path to val CSV")
     parser.add_argument("--timesteps", type=int, default=50_000, help="Total training timesteps")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
 
-    train_ppo_agent(total_timesteps=args.timesteps, seed=args.seed)
+    train_ppo_agent(
+        train_csv=args.train_csv,
+        val_csv=args.val_csv,
+        total_timesteps=args.timesteps,
+        seed=args.seed,
+    )

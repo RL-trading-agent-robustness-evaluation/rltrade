@@ -102,3 +102,39 @@ def verify_state_responsiveness(
         "actions_normal_dist": {k: actions_normal.count(k) / len(actions_normal) for k in [0, 1, 2]},
         "actions_zeroed_dist": {k: actions_zeroed.count(k) / len(actions_zeroed) for k in [0, 1, 2]},
     }
+
+
+if __name__ == "__main__":
+    import argparse
+    from stable_baselines3 import PPO
+
+    parser = argparse.ArgumentParser(description="Evaluate Trained Trading Agent")
+    parser.add_argument("--model", type=str, default="models/ppo_victim_v1_seed42.zip", help="Path to saved model zip")
+    parser.add_argument("--data", type=str, default="data/processed/val.csv", help="Path to dataset CSV to evaluate on")
+    parser.add_argument("--output-ledger", type=str, default="experiments/ppo_runs/eval_ledger.csv", help="Path to save step ledger CSV")
+    args = parser.parse_args()
+
+    model_path = Path(args.model)
+    if not model_path.exists():
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    data_df = pd.read_csv(args.data)
+    model = PPO.load(model_path)
+    env = RLTradingEnv(data_df)
+
+    print(f"\nEvaluating {model_path.name} on {args.data} ({len(data_df)} days)...")
+    metrics = evaluate_agent(model, env, deterministic=True, save_ledger_csv=args.output_ledger)
+
+    print("\n================ FINANCIAL PERFORMANCE REPORT ================")
+    print(f"Total Return:         {metrics['total_return_pct']:>8.2f}%")
+    print(f"Annualized Return:    {metrics['annual_return_pct']:>8.2f}%")
+    print(f"Annualized Volatility:{metrics['annual_vol_pct']:>8.2f}%")
+    print(f"Annualized Sharpe:    {metrics['annual_sharpe']:>8.2f}")
+    print(f"Maximum Drawdown:     {metrics['max_drawdown_pct']:>8.2f}%")
+    print(f"Total Transaction Cost:  ${metrics['total_cost']:>10.2f}")
+    print(f"Action Distribution:  Cash={metrics['action_distribution'][0]*100:.1f}%, 50%={metrics['action_distribution'][1]*100:.1f}%, 100%={metrics['action_distribution'][2]*100:.1f}%")
+    print("==============================================================")
+
+    resp = verify_state_responsiveness(model, data_df, deterministic=True)
+    print(f"\nVictim Gate V1 (State-Responsiveness): {'PASSED' if resp['is_state_responsive'] else 'FAILED'}")
+    print(f"Decision Difference when Observation Masked: {resp['action_diff_rate']*100:.1f}%\n")

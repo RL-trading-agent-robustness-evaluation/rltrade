@@ -90,3 +90,32 @@ Tested across the full 2019–2026 SPY dataset (1,935 rows):
 - **Masked Observation Action Distribution** (Market features zeroed out): `{0: 0.0%, 1: 100.0%, 2: 0.0%}`
 - **Action Difference Rate**: **49.0%** (> 5% threshold)
 - **Result**: **PASSED**. The policy is actively state-responsive and has not degenerated into a fixed action.
+
+---
+
+## [2026-09-25] - Canonical CRSP & FRED Data Ingestion & Gate D1 Audit
+
+### 1. Checksum & Integrity Audit
+The 4 canonical datasets downloaded from WRDS/FRED match Regulation V1 §2.2 SHA-256 checksums byte-for-byte:
+- `crsp_dsf_spy_tlt_gld_2009_2025.csv`: SHA-256 `3448d24ac6f7ac82cb982db27187ab6daa5614f2431b824eabd670332993eb98` (12,828 rows, 50 cols, 2009-01-02 to 2025-12-31).
+- `dsedist_spy_tlt_gld_2009_2025.csv`: SHA-256 `a27dbb6e56c486eeeabd1131ced492e18384695b1165f34d691766f279727969` (256 rows, 8 cols).
+- `DGS3MO.csv`: SHA-256 `bfa63786acff1fab5d19b88c7f4baa281288b59028531f8567a974e1b46d4953` (4,173 rows, 2010-01-04 to 2025-12-31).
+- `DTB3.csv`: SHA-256 `87a720f7c485929038db6591ae6a77a55cfe7c03097eeff5a88f73cac7740556` (4,173 rows, 2010-01-04 to 2025-12-31).
+
+### 2. Ingestion & Quality Gates
+- **Gate D1 (Data Quality)**: Verified 0 NaNs, 0 OHLC inequality violations across all 4,276 rows for each asset:
+  - SPY (`PERMNO 84398`): 4,276 rows (68 dividend distributions).
+  - TLT (`PERMNO 89468`): 4,276 rows (192 dividend distributions).
+  - GLD (`PERMNO 90448`): 4,276 rows (0 dividend distributions).
+- **Generated Canonical Datasets** in `data/interim/`:
+  - `spy_canonical_crsp.csv` (4,276 rows, 2009–2025)
+  - `tlt_canonical_crsp.csv` (4,276 rows, 2009–2025)
+  - `gld_canonical_crsp.csv` (4,276 rows, 2009–2025)
+- **Generated Regulation V1 Academic Splits** in `data/processed/crsp_spy/`:
+  - Train: 2,264 rows (`2010-01-04` to `2018-12-31`)
+  - Validation: 757 rows (`2019-01-01` to `2021-12-31`)
+  - Locked Test: 1,003 rows (`2022-01-01` to `2025-12-31`)
+
+### 3. Compute Infrastructure & Colab Runner
+- Created `notebooks/colab_runner.ipynb` to support offloading heavy multi-seed training sweeps to Google Colab GPU / High-RAM instances.
+- Pre-configured with environment checks, Google Drive mounting / Git cloning, unit test validation, multi-seed training execution, evaluation reports, and inline TensorBoard monitoring.
